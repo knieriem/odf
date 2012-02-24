@@ -7,25 +7,7 @@ import (
 	"testing"
 )
 
-// "A"	"1"	"A cell containing\nmore than one line."
-// "B"	"foo"	""
-// ""	"4"	"quote\"quote"
-// "14.01.12"	""	""
-// ""	""	""
-// "cell spanning two columns"	""	""
-// ""	""	""
-// ""	""	""
-// "aaa"	"cell spanning two rows"	"ccc"
-// "aa"	""	"cc"
-// ""	""	""
-// "same content"	"same content"	"same content"
-// ""	""	""
-// "same content"	""	""
-// "same content"	""	""
-// "same content"	""	""
-// ""	""	""
-// "Cell with  styles"	""	""
-func ExampleParsing() {
+func ExampleParseContent() {
 	var doc Doc
 
 	f, err := Open("./test.ods")
@@ -51,6 +33,25 @@ func ExampleParsing() {
 			fmt.Print("\n")
 		}
 	}
+	// Output:
+	// "A"	"1"	"A cell containing\nmore than one line."
+	// "B"	"foo"	""
+	// ""	"4"	"quote\"quote"
+	// "14.01.12"	""	""
+	// ""	""	""
+	// "cell spanning two columns"	""	""
+	// ""	""	""
+	// ""	""	""
+	// "aaa"	"cell spanning two rows"	"ccc"
+	// "aa"	""	"cc"
+	// ""	""	""
+	// "same content"	"same content"	"same content"
+	// ""	""	""
+	// "same content"	""	""
+	// "same content"	""	""
+	// "same content"	""	""
+	// ""	""	""
+	// "Cell with  styles"	""	""
 }
 
 func TestDummy(_ *testing.T) {
