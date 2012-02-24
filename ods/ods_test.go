@@ -25,6 +25,10 @@ func ExampleParseContent() {
 	// tab separated, quoted fields.
 	if len(doc.Table) > 0 {
 		for _, row := range doc.Table[0].Strings() {
+			if len(row) == 0 {
+				fmt.Println("-")
+				continue
+			}
 			sep := ""
 			for _, field := range row {
 				fmt.Print(sep, strconv.Quote(field))
@@ -35,23 +39,23 @@ func ExampleParseContent() {
 	}
 	// Output:
 	// "A"	"1"	"A cell containing\nmore than one line."
-	// "B"	"foo"	""
+	// "B"	"foo"
 	// ""	"4"	"quote\"quote"
-	// "14.01.12"	""	""
-	// ""	""	""
-	// "cell spanning two columns"	""	""
-	// ""	""	""
-	// ""	""	""
+	// "14.01.12"
+	// -
+	// "cell spanning two columns"	""
+	// -
+	// -
 	// "aaa"	"cell spanning two rows"	"ccc"
 	// "aa"	""	"cc"
-	// ""	""	""
+	// -
 	// "same content"	"same content"	"same content"
-	// ""	""	""
-	// "same content"	""	""
-	// "same content"	""	""
-	// "same content"	""	""
-	// ""	""	""
-	// "Cell with  styles"	""	""
+	// -
+	// "same content"
+	// "same content"
+	// "same content"
+	// -
+	// "Cell with  styles"
 }
 
 func TestDummy(_ *testing.T) {

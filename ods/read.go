@@ -29,11 +29,21 @@ type Row struct {
 // Return the contents of a row as a slice of strings. Cells that are
 // covered by other cells will appear as empty strings.
 func (r *Row) Strings() (row []string) {
-	if len(r.Cell) == 0 {
+	n := len(r.Cell)
+	if n == 0 {
 		return
 	}
 
-	n := 0
+	// remove trailing empty cells
+	for i := n - 1; i >= 0; i-- {
+		if !r.Cell[i].IsEmpty() {
+			break
+		}
+		n--
+	}
+	r.Cell = r.Cell[:n]
+
+	n = 0
 	// calculate the real number of cells (including repeated)
 	for _, c := range r.Cell {
 		switch {
@@ -75,6 +85,18 @@ type Cell struct {
 	ColSpan      int    `xml:"number-columns-spanned,attr"`
 
 	P []Par `xml:"p"`
+}
+
+func (c *Cell) IsEmpty() (empty bool) {
+	switch len(c.P) {
+	case 0:
+		empty = true
+	case 1:
+		if c.P[0].XML == "" {
+			empty = true
+		}
+	}
+	return
 }
 
 func (c *Cell) String() string {
