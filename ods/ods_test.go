@@ -55,7 +55,7 @@ func ExampleParseContent() {
 	// "same content"
 	// "same content"
 	// -
-	// "Cell with  styles"
+	// "Cell with inline styles"
 }
 
 func TestDummy(_ *testing.T) {

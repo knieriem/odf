@@ -4,9 +4,12 @@
 package ods
 
 import (
+	"bytes"
 	"encoding/xml"
 	"errors"
 	"github.com/knieriem/odf"
+	"strconv"
+	"strings"
 )
 
 type Doc struct {
@@ -28,7 +31,7 @@ type Row struct {
 
 // Return the contents of a row as a slice of strings. Cells that are
 // covered by other cells will appear as empty strings.
-func (r *Row) Strings() (row []string) {
+func (r *Row) Strings(b *bytes.Buffer) (row []string) {
 	n := len(r.Cell)
 	if n == 0 {
 		return
@@ -59,7 +62,7 @@ func (r *Row) Strings() (row []string) {
 	for _, c := range r.Cell {
 		cs := ""
 		if c.XMLName.Local != "covered-table-cell" {
-			cs = c.String()
+			cs = c.PlainText(b)
 		}
 		row[w] = cs
 		w++
@@ -99,24 +102,75 @@ func (c *Cell) IsEmpty() (empty bool) {
 	return
 }
 
-func (c *Cell) String() string {
+// PlainText extracts the text from a cell. Space tags (<text:s text:c="#">)
+// are recognized. Inline elements (like span) are ignored, but the
+// text they contain is preserved
+func (c *Cell) PlainText(b *bytes.Buffer) string {
 	n := len(c.P)
 	if n == 1 {
-		return c.P[0].XML
+		return c.P[0].PlainText(b)
 	}
-	s := ""
+
+	b.Reset()
 	for i := range c.P {
 		if i != n-1 {
-			s += c.P[i].XML + "\n"
+			c.P[i].writePlainText(b)
+			b.WriteByte('\n')
 		} else {
-			s += c.P[i].XML
+			c.P[i].writePlainText(b)
 		}
 	}
-	return s
+	return b.String()
 }
 
 type Par struct {
-	XML string `xml:",chardata"`
+	XML string `xml:",innerxml"`
+}
+
+func (p *Par) PlainText(b *bytes.Buffer) string {
+	for i := range p.XML {
+		if p.XML[i] == '<' || p.XML[i] == '&' {
+			b.Reset()
+			p.writePlainText(b)
+			return b.String()
+		}
+	}
+	return p.XML
+}
+func (p *Par) writePlainText(b *bytes.Buffer) {
+	for i := range p.XML {
+		if p.XML[i] == '<' || p.XML[i] == '&' {
+			goto decode
+		}
+	}
+	b.WriteString(p.XML)
+	return
+
+decode:
+	d := xml.NewDecoder(strings.NewReader(p.XML))
+	for {
+		t, _ := d.Token()
+		if t == nil {
+			break
+		}
+		switch el := t.(type) {
+		case xml.StartElement:
+			switch el.Name.Local {
+			case "s":
+				n := 1
+				for _, a := range el.Attr {
+					if a.Name.Local == "c" {
+						n, _ = strconv.Atoi(a.Value)
+					}
+				}
+				for i := 0; i < n; i++ {
+					b.WriteByte(' ')
+				}
+			}
+		case xml.CharData:
+			b.Write(el)
+		}
+	}
 }
 
 func (t *Table) Width() int {
@@ -126,6 +180,8 @@ func (t *Table) Height() int {
 	return len(t.Row)
 }
 func (t *Table) Strings() (s [][]string) {
+	var b bytes.Buffer
+
 	if len(t.Row) == 0 {
 		return
 	}
@@ -144,7 +200,7 @@ func (t *Table) Strings() (s [][]string) {
 	s = make([][]string, n)
 	w := 0
 	for _, r := range t.Row {
-		row := r.Strings()
+		row := r.Strings(&b)
 		s[w] = row
 		w++
 		for j := 1; j < r.RepeatedRows; j++ {
