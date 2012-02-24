@@ -29,6 +29,15 @@ type Row struct {
 	Cell []Cell `xml:",any"` // use ",any" to match table-cell and covered-table-cell
 }
 
+func (r *Row) IsEmpty() bool {
+	for _, c := range r.Cell {
+		if !c.IsEmpty() {
+			return false
+		}
+	}
+	return true
+}
+
 // Return the contents of a row as a slice of strings. Cells that are
 // covered by other cells will appear as empty strings.
 func (r *Row) Strings(b *bytes.Buffer) (row []string) {
@@ -182,11 +191,21 @@ func (t *Table) Height() int {
 func (t *Table) Strings() (s [][]string) {
 	var b bytes.Buffer
 
-	if len(t.Row) == 0 {
+	n := len(t.Row)
+	if n == 0 {
 		return
 	}
 
-	n := 0
+	// remove trailing empty rows
+	for i := n - 1; i >= 0; i-- {
+		if !t.Row[i].IsEmpty() {
+			break
+		}
+		n--
+	}
+	t.Row = t.Row[:n]
+
+	n = 0
 	// calculate the real number of rows (including repeated rows)
 	for _, r := range t.Row {
 		switch {
