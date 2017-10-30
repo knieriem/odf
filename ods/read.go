@@ -8,6 +8,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"github.com/knieriem/odf"
+	"io"
 	"strconv"
 	"strings"
 )
@@ -236,19 +237,30 @@ type File struct {
 
 // Open an ODS file. If the file doesn't exist or doesn't look
 // like a spreadsheet file, an error is returned.
-func Open(fileName string) (f *File, err error) {
-	of, err := odf.Open(fileName)
+func Open(fileName string) (*File, error) {
+	f, err := odf.Open(fileName)
 	if err != nil {
-		return
+		return nil, err
 	}
+	return newFile(f)
+}
 
-	if of.MimeType != odf.MimeTypePfx+"spreadsheet" {
-		of.Close()
-		err = errors.New("not a spreadsheet")
-	} else {
-		f = &File{of}
+// NewReader initializes a File struct with an already opened
+// ODS file, and checks the spreadsheet's media type.
+func NewReader(r io.ReaderAt, size int64) (*File, error) {
+	f, err := odf.NewReader(r, size)
+	if err != nil {
+		return nil, err
 	}
-	return
+	return newFile(f)
+}
+
+func newFile(f *odf.File) (*File, error) {
+	if f.MimeType != odf.MimeTypePfx+"spreadsheet" {
+		f.Close()
+		return nil, errors.New("not a spreadsheet")
+	}
+	return &File{f}, nil
 }
 
 // Parse the content.xml part of an ODS file. On Success
