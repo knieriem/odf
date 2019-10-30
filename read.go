@@ -45,14 +45,18 @@ func newFile(z *zip.Reader, closer io.Closer) (*File, error) {
 	f.Reader = z
 	mf, err := f.Open("mimetype")
 	if err != nil {
-		closer.Close()
+		if closer != nil {
+			closer.Close()
+		}
 		return nil, err
 	}
 
 	b, err := ioutil.ReadAll(mf)
 	mf.Close()
 	if err != nil {
-		closer.Close()
+		if closer != nil {
+			closer.Close()
+		}
 		return nil, err
 	}
 	f.MimeType = string(b)
